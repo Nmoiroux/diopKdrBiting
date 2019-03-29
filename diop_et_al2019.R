@@ -124,7 +124,7 @@ Fig2A <- ggplot(df.Fig2A , aes(genotype, y=perf)) +   										# panel A
 	geom_bar(aes(fill=genotype), position = "dodge", stat= "identity" )+
 	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
 	scale_fill_manual(values=cbPalette)+
-	ylab("Blood-feeding success rate")+
+	ylab("Feeding success rate")+
 	theme(legend.position="none") +
 	ylim(0,1)+
 	xlab("")
@@ -169,7 +169,7 @@ ggplot(df.graph.bit, aes(genotype, group = ttmt,  y=perf)) +
 	geom_bar(aes(fill=genotype), position = "dodge", stat= "identity" )+
 	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
 	scale_fill_manual(values=cbPalette)+
-	ylab("Blood-feeding success rate")+
+	ylab("Feeding success rate")+
 	theme(legend.position="none") +
 	ylim(0,1)+
 	facet_grid(~ttmt)+
@@ -183,7 +183,7 @@ figure3 <- ggplot(df.graph.bit, aes(ttmt, group = genotype,  y=perf)) +   # data
 	geom_bar(aes(fill=ttmt), position = "dodge", stat= "identity" )+
 	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
 	scale_fill_manual(values=rev(cbPalette))+
-	ylab("Blood-feeding success rate")+
+	ylab("Feeding success rate")+
 	theme(legend.position="none") +
 	ylim(0,1)+
 	facet_grid(~genotype)+
