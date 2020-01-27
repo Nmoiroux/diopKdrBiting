@@ -12,7 +12,7 @@ library(coxme)
 library(Hmisc)
 library(multipanelfigure)
 library(lubridate)
-source("modifying-facet-scales-in-ggplot2.R")
+source("modifying-facet-scales-in-ggplot2.R") # contains functions used to produce Figure 4
 
 ###### load data
 biting <- read.delim("data_diop_2019.txt")
@@ -32,9 +32,11 @@ biting <- read.delim("data_diop_2019.txt")
 # 	Av_weight : Average weight of 5 mosquitoes from the same rearing cage (mg)
 
 biting$Date <- as.factor(biting$Date)
+biting$ttmt <- fct_rev(biting$ttmt)
+
+## create a binomial variable for KD phenotype (0 = non-KD, 1 = KD)
 biting$kd <- as.numeric(biting$T_KD > 0)
 biting$kd[is.na(biting$kd)] <- 0
-biting$ttmt <- fct_rev(biting$ttmt)
 
 ## calculate veighted volume of blood
 biting$V_Weight <- biting$V_bloodmeal/biting$Av_weight
@@ -59,7 +61,7 @@ table1 %>% mutate(total_kd=fed_kd+unfed_kd) %>% 							# compute knockdown rates
 	mutate(kdR_hi=binconf(total_kd,total,alpha = 0.05)[,3])
 
 ###### binomial mixed-effect model of feeding success  ----
-glmm_perf <- glmer(perf~genotype*ttmt + (1|Date), data=biting, family=binomial)
+glmm_perf <- glmmTMB(perf~genotype*ttmt + (1|Date), data=biting, family=binomial)
 
 # multiple comparisons
 summary(emmeans(glmm_perf, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
