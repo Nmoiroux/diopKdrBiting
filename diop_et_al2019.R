@@ -11,13 +11,33 @@ library(glmmTMB)
 library(coxme)
 library(Hmisc)
 library(multipanelfigure)
+library(lubridate)
+source("modifying-facet-scales-in-ggplot2.R")
 
 ###### load data
 biting <- read.delim("data_diop_2019.txt")
+### metadata: dataframe "biting" has 13 columns which are described below:
+# 	Date : date in days after 1900-01-01
+# 	Trials : a unique code for each mosquito (primary key, the first character correspond to the treatment (C: control, P: permanet or O: Olysetç the second character is an order number)
+# 	genotype : genotype for the kdr mutation (RR, RS or SS) of the tested mosquito 
+# 	ttmt : treatment of pre-exposure (Control = Untreated Net, Olyset = Permethrin teated net, Permanet = Deltamethrin Treated net)
+# 	perf : biting succes (0= unfed, 1 = fed)
+# 	T_KD : time to be recorded as KD (in seconds)
+# 	T_prob : total duration of probing (in seconds)
+# 	N_prob : number of probing events
+# 	T_feed : duration of feeding (in seconds)
+# 	N_feed : number of feeding events
+# 	T_predi : duration of pre-diuresis (in seconds)
+# 	V_bloodmeal : volume of blood (µL)
+# 	Av_weight : Average weight of 5 mosquitoes from the same rearing cage (mg)
+
 biting$Date <- as.factor(biting$Date)
 biting$kd <- as.numeric(biting$T_KD > 0)
 biting$kd[is.na(biting$kd)] <- 0
 biting$ttmt <- fct_rev(biting$ttmt)
+
+## calculate veighted volume of blood
+biting$V_Weight <- biting$V_bloodmeal/biting$Av_weight
 
 ###### Table 1 ----
 fed <- biting %>% filter(perf=="1") %>%     # count fed mosquitoes among treatment and genotypes
@@ -38,7 +58,7 @@ table1 %>% mutate(total_kd=fed_kd+unfed_kd) %>% 							# compute knockdown rates
 	mutate(kdR_lo=binconf(total_kd,total,alpha = 0.05)[,2]) %>%
 	mutate(kdR_hi=binconf(total_kd,total,alpha = 0.05)[,3])
 
-###### binomila mixed-effect model of feeding success  ----
+###### binomial mixed-effect model of feeding success  ----
 glmm_perf <- glmer(perf~genotype*ttmt + (1|Date), data=biting, family=binomial)
 
 # multiple comparisons
@@ -101,6 +121,14 @@ supTable1 <- as.data.frame(slopeV)
 supTable2 <- as.data.frame(slopeP)
 supTable1
 supTable2
+
+##### binomial model of KD  
+biting_ttmt <- biting %>% filter(ttmt != c("Control")) %>% mutate(perf=as.factor(perf))			# subset of mosquitoes exposed to insecticitide-treated nets
+brglm_kd <- glm(kd~genotype*ttmt*perf, data=biting_ttmt, family=binomial, method = "brglmFit")
+
+summary(emmeans(brglm_kd , pairwise~genotype | ttmt +perf, type="response"), infer = TRUE) # among genotypes comparison
+summary(emmeans(brglm_kd , pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
 
 ###### data for Figures-----
 Perf_Biting <- biting
@@ -208,6 +236,20 @@ figure4 <- ggplot(df_fig4, aes(x=ttmt, y=value)) +
 	theme(strip.background = element_blank(),strip.placement = "outside", panel.spacing.y=unit(3, "lines"),legend.position="none")+
 	ylab("")+xlab("")
 
+### change y_axis limits (need to load the functions 'scale_override', 'CustomFacetWrap', 'facet_wrap_custom' that are in "modifying-facet-scales-in-ggplot2.R")
+figure4 + facet_wrap_custom(genotype~var, scales="free", strip.position = "left", labeller=labeller(var = lab2, genotype=lab3), 
+														scale_overrides = list(
+															scale_override(1, scale_y_continuous(limits = c(0, 550))),
+															scale_override(2, scale_y_continuous(limits = c(0, 450))),
+															scale_override(3, scale_y_continuous(limits = c(0, 8))),
+															scale_override(4, scale_y_continuous(limits = c(0, 550))),
+															scale_override(5, scale_y_continuous(limits = c(0, 450))),
+															scale_override(6, scale_y_continuous(limits = c(0, 8))),
+															scale_override(7, scale_y_continuous(limits = c(0, 550))),
+															scale_override(8, scale_y_continuous(limits = c(0, 450))),
+															scale_override(9, scale_y_continuous(limits = c(0, 8)))
+														))
 figure4
+
 
 ##### END -----
