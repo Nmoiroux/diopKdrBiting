@@ -9,9 +9,10 @@ library(emmeans)
 library(lme4)
 library(glmmTMB)
 library(coxme)
+library(brglm2)
 library(Hmisc)
 library(multipanelfigure)
-library(lubridate)
+#library(lubridate)
 source("modifying-facet-scales-in-ggplot2.R") # contains functions used to produce Figure 4
 
 ###### load data
@@ -41,6 +42,7 @@ biting$kd[is.na(biting$kd)] <- 0
 ## calculate veighted volume of blood
 biting$V_Weight <- biting$V_bloodmeal/biting$Av_weight
 
+
 ###### Table 1 ----
 fed <- biting %>% filter(perf=="1") %>%     # count fed mosquitoes among treatment and genotypes
 	group_by(genotype, ttmt) %>% 
@@ -60,12 +62,29 @@ table1 %>% mutate(total_kd=fed_kd+unfed_kd) %>% 							# compute knockdown rates
 	mutate(kdR_lo=binconf(total_kd,total,alpha = 0.05)[,2]) %>%
 	mutate(kdR_hi=binconf(total_kd,total,alpha = 0.05)[,3])
 
-###### binomial mixed-effect model of feeding success  ----
+###### Binomial model of KD ---- 
+biting_ttmt <- biting %>% filter(ttmt != c("Control")) # subset of mosquitoes exposed to insecticitide-treated nets
+brglm_kd <- glm(kd~genotype*ttmt, data=biting_ttmt, family=binomial, method = "brglmFit")
+
+summary(emmeans(brglm_kd , pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+
+
+###### Binomial mixed-effect model of feeding success  ----
 glmm_perf <- glmmTMB(perf~genotype*ttmt + (1|Date), data=biting, family=binomial)
 
 # multiple comparisons
 summary(emmeans(glmm_perf, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 summary(emmeans(glmm_perf, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Binomial mixed-effect model of feeding success in relation to KD phenotype ----
+biting_ttmt_2 <- biting %>% filter(ttmt != c("Control")) %>% mutate(kd=as.factor(kd)) # subset of mosquitoes exposed to insecticitide-treated nets
+glmm_perf_full <- glmmTMB(perf~kd*genotype*ttmt + (1|Date), data=biting_ttmt_2, family=binomial)
+# multiple comparisons
+comp_kd_perf <- summary(emmeans(glmm_perf_full, pairwise~kd | genotype + ttmt, type="response"), infer = TRUE) # among phenotypes comparison
+
+###### supplementary Table 3 ----
+supTable1 <- as.data.frame(comp_kd_perf$contrast)[,-c(5:6,9)]
+supTable1
 
 ###### Zero-trunctated Negative-Binomial (ZTNB) mixed-effect model of the number of probing attempts -----
 glmm_Nprob <- glmmTMB(N_Prob~genotype*ttmt + (1|Date), data=biting, family=truncated_poisson(link = "log") ) # ZT poisson model
@@ -73,15 +92,30 @@ glmm_Nprob_nb <- glmmTMB(N_Prob~genotype*ttmt + (1|Date), data=biting, family=tr
 anova(glmm_Nprob, glmm_Nprob_nb) # model NB is the best
 
 # multiple comparisons
-summary(emmeans(glmm_Nprob_nb, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(glmm_Nprob_nb, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_Nprob <- summary(emmeans(glmm_Nprob_nb, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_Nprob <- summary(emmeans(glmm_Nprob_nb, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### supplementary Table 1 ----
+supTable2 <- as.data.frame(comp_gen_Nprob$contrast)[c(7:9),-c(4:5,8)]
+supTable2
+
+###### supplementary Table 4 ----
+supTable4 <- as.data.frame(comp_tre_Nprob$contrast)[,-c(4:5,8)]
+supTable4
 
 ###### Cox proportional hazard mixed-effect model of the probing duration-----
 coxm_prob<-coxme(Surv(T_Prob,perf)~genotype*ttmt + (1|Date), biting) 
 
 # multiple comparisons
-summary(emmeans(coxm_prob, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(coxm_prob, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_prob <- summary(emmeans(coxm_prob, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_prob <- summary(emmeans(coxm_prob, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### supplementary Table 2 ----
+supTable3 <- as.data.frame(comp_gen_prob$contrast)[c(7:9),-c(4:5,8)]
+supTable3
+###### supplementary Table 5 ----
+supTable5 <- as.data.frame(comp_tre_prob$contrast)[,-c(4:5,8)]
+supTable5
 
 ###### Cox proportional hazard mixed-effect model of the feeding duration-----
 coxm_feed<-coxme(Surv(T_feed,perf)~genotype*ttmt + (1|Date), biting) 
@@ -97,14 +131,14 @@ coxm_predi<-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting)
 summary(emmeans(coxm_predi, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 summary(emmeans(coxm_predi, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
-###### linear mixed-effect model of the weighted volume of bloodmeal----
+###### Linear mixed-effect model of the weighted volume of bloodmeal----
 lmm_V <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting)
 
 # multiple comparisons
 summary(emmeans(lmm_V, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 summary(emmeans(lmm_V, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
-###### feeding duration vs blood-meal size/pre-diuresis duration correlation analysis (supplementary Table 1 and 2) ----
+###### Feeding duration vs blood-meal size/pre-diuresis duration correlation analysis ----
 
 ### feeding duration vs blood-meal size
 # mixed-effect linear model
@@ -118,18 +152,70 @@ lmm_P_feed <- coxme(Surv(T_Predi,perf)~T_feed*genotype*ttmt + (1|Date), data=bit
 # is the slope diffrent than zero ?
 slopeP <- summary(emtrends(lmm_P_feed, ~genotype*ttmt, var = "T_feed", transform ="response"), infer = TRUE) 
 
-##### supplementary Table 1 and 2 ---
-supTable1 <- as.data.frame(slopeV)
-supTable2 <- as.data.frame(slopeP)
-supTable1
-supTable2
+###### supplementary Table 6 and 7 ----
+supTable6 <- as.data.frame(slopeV)[,-c(4:5,8)]
+supTable7 <- as.data.frame(slopeP)[,-c(4:5,8)]
+supTable6
+supTable7
 
-##### binomial model of KD  
-biting_ttmt <- biting %>% filter(ttmt != c("Control")) %>% mutate(perf=as.factor(perf))			# subset of mosquitoes exposed to insecticitide-treated nets
-brglm_kd <- glm(kd~genotype*ttmt*perf, data=biting_ttmt, family=binomial, method = "brglmFit")
 
-summary(emmeans(brglm_kd , pairwise~genotype | ttmt +perf, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(brglm_kd , pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+####### Running all analyses while excluding KD mosquitoes ------
+biting_kd0 <- biting %>% filter(kd==0)    # subset with only non-KD mosquitoes
+###### Binomial mixed-effect model of feeding success (non-KD mosquitoes) ----
+glmm_perf_kd0 <- glmmTMB(perf~genotype*ttmt + (1|Date), data=biting_kd0, family=binomial)
+
+# multiple comparisons
+comp_gen_perf_kd0 <- summary(emmeans(glmm_perf_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_perf_kd0 <- summary(emmeans(glmm_perf_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Zero-trunctated Negative-Binomial (ZTNB) mixed-effect model of the number of probing attempts (non-KD mosquitoes) -----
+glmm_Nprob_nb_kd0 <- glmmTMB(N_Prob~genotype*ttmt + (1|Date), data=biting_kd0, family=truncated_nbinom2(link = "log") ) # ZT NB
+
+# multiple comparisons
+comp_tre_Nprob_kd0 <- summary(emmeans(glmm_Nprob_nb_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Cox proportional hazard mixed-effect model of the probing duration (non-KD mosquitoes) -----
+coxm_prob_kd0 <-coxme(Surv(T_Prob,perf)~genotype*ttmt + (1|Date), biting_kd0) 
+
+# multiple comparisons
+comp_tre_prob_kd0 <- summary(emmeans(coxm_prob_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Cox proportional hazard mixed-effect model of the feeding duration (non-KD mosquitoes) -----
+coxm_feed_kd0 <-coxme(Surv(T_feed,perf)~genotype*ttmt + (1|Date), biting_kd0) 
+
+# multiple comparisons
+comp_tre_feed_kd0 <- summary(emmeans(coxm_feed_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Cox proportional hazard mixed-effect model of the prediuresis duration (non-KD mosquitoes) ----
+coxm_predi_kd0 <-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting_kd0) 
+
+# multiple comparisons
+comp_tre_predi_kd0 <- summary(emmeans(coxm_predi_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### Linear mixed-effect model of the weighted volume of bloodmeal (non-KD mosquitoes) ----
+lmm_V_kd0 <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting_kd0)
+
+# multiple comparisons
+comp_tre_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+
+
+###### Supplementary Tables 8 to 14 ----
+supTable8 <- as.data.frame(comp_tre_perf_kd0$contrast)[,-c(4:5,8)]
+supTable9 <- as.data.frame(comp_gen_perf_kd0$contrast)[,-c(4:5,8)]
+supTable10 <- as.data.frame(comp_tre_Nprob_kd0$contrast)[,-c(4:5,8)]
+supTable11 <- as.data.frame(comp_tre_prob_kd0$contrast)[,-c(4:5,8)]
+supTable12 <- as.data.frame(comp_tre_feed_kd0$contrast)[,-c(4:5,8)]
+supTable13 <- as.data.frame(comp_tre_predi_kd0$contrast)[,-c(4:5,8)]
+supTable14 <- as.data.frame(comp_tre_V_kd0$contrast)[,-c(4:5,8)]
+supTable8
+supTable9
+supTable10
+supTable11
+supTable12
+supTable13
+supTable14
 
 
 ###### data for Figures-----
@@ -195,7 +281,7 @@ figure2
 
 ###### Supplementary Figure 1 ----
 
-ggplot(df.graph.bit, aes(genotype, group = ttmt,  y=perf)) +   
+Suppfigure1 <- ggplot(df.graph.bit, aes(genotype, group = ttmt,  y=perf)) +   
 	geom_bar(aes(fill=genotype), position = "dodge", stat= "identity" )+
 	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
 	scale_fill_manual(values=cbPalette)+
@@ -206,7 +292,7 @@ ggplot(df.graph.bit, aes(genotype, group = ttmt,  y=perf)) +
 	xlab("")+
 	theme(strip.background = element_blank(),strip.placement = "outside", panel.spacing.x=unit(2, "lines"),legend.position="none")
 
-
+Suppfigure1
 
 ###### Figure 3 -----
 figure3 <- ggplot(df.graph.bit, aes(ttmt, group = genotype,  y=perf)) +   # data used generated in Figure 2 § (above)
@@ -252,6 +338,47 @@ figure4 + facet_wrap_custom(genotype~var, scales="free", strip.position = "left"
 															scale_override(9, scale_y_continuous(limits = c(0, 8)))
 														))
 figure4
+
+
+###### Supplementary Figure 2 and 3 ----
+##### data for Supplementary Figure 2 and 3
+Perf_Biting_kd0 <- biting_kd0
+Perf_Biting_kd0$genotype <- fct_rev(Perf_Biting_kd0$genotype) # reverse factors level order
+Perf_Biting_kd0$ttmt <- fct_rev(Perf_Biting_kd0$ttmt)			    # reverse factors level order
+
+# table used for Figure 2A, sup Figure 1 and Figure 3
+df.graph.bit_kd0<- Perf_Biting_kd0 %>% group_by(ttmt, genotype) %>% summarise(P=sum(perf==1),Total=length(perf)) # count fed (data for figure 2A and 3)
+df.graph.bit_kd0$perf<- binconf(df.graph.bit_kd0$P,df.graph.bit_kd0$Total,alpha = 0.05)[,1]                          # compute performanace rate
+df.graph.bit_kd0$lower<- binconf(df.graph.bit_kd0$P,df.graph.bit_kd0$Total,alpha = 0.05)[,2]												 # and binomial CI
+df.graph.bit_kd0$upper<- binconf(df.graph.bit_kd0$P,df.graph.bit_kd0$Total,alpha = 0.05)[,3]
+df.graph.bit_kd0$genotype <-as.factor(df.graph.bit_kd0$genotype)
+df.graph.bit_kd0$ttmt <- fct_recode(df.graph.bit_kd0$ttmt , Deltamethrin="Permanet",Untreated = "Control", Permethrin="Olyset")
+
+Suppfigure2 <- ggplot(df.graph.bit_kd0, aes(ttmt, group = genotype,  y=perf)) +   # data used generated in Figure 2 § (above)
+	geom_bar(aes(fill=ttmt), position = "dodge", stat= "identity" )+
+	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
+	scale_fill_manual(values=rev(cbPalette))+
+	ylab("Blood-feeding success rate")+
+	theme(legend.position="none") +
+	ylim(0,1)+
+	facet_grid(~genotype)+
+	xlab("")+
+	theme(strip.background = element_blank(),strip.placement = "outside", panel.spacing.x=unit(2, "lines"),legend.position="none")
+
+
+Suppfigure3 <- ggplot(filter(df.graph.bit_kd0, ttmt != "Untreated"), aes(genotype, group = ttmt,  y=perf)) +   
+	geom_bar(aes(fill=genotype), position = "dodge", stat= "identity" )+
+	geom_errorbar(aes(ymin = lower, ymax = upper), width=0.2)+
+	scale_fill_manual(values=cbPalette)+
+	ylab("Blood-feeding success rate")+
+	theme(legend.position="none") +
+	ylim(0,1)+
+	facet_grid(~ttmt)+
+	xlab("")+
+	theme(strip.background = element_blank(),strip.placement = "outside", panel.spacing.x=unit(2, "lines"),legend.position="none")
+
+Suppfigure2
+Suppfigure3
 
 
 ##### END -----
