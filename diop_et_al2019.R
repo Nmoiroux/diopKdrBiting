@@ -83,8 +83,8 @@ glmm_perf_full <- glmmTMB(perf~kd*genotype*ttmt + (1|Date), data=biting_ttmt_2, 
 comp_kd_perf <- summary(emmeans(glmm_perf_full, pairwise~kd | genotype + ttmt, type="response"), infer = TRUE) # among phenotypes comparison
 
 ###### supplementary Table 3 ----
-supTable1 <- as.data.frame(comp_kd_perf$contrast)[,-c(5:6,9)]
-supTable1
+supTable3 <- as.data.frame(comp_kd_perf$contrast)[,-c(5:6,9)]
+supTable3
 
 ###### Zero-trunctated Negative-Binomial (ZTNB) mixed-effect model of the number of probing attempts -----
 glmm_Nprob <- glmmTMB(N_Prob~genotype*ttmt + (1|Date), data=biting, family=truncated_poisson(link = "log") ) # ZT poisson model
@@ -96,8 +96,8 @@ comp_gen_Nprob <- summary(emmeans(glmm_Nprob_nb, pairwise~genotype | ttmt, type=
 comp_tre_Nprob <- summary(emmeans(glmm_Nprob_nb, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
 ###### supplementary Table 1 ----
-supTable2 <- as.data.frame(comp_gen_Nprob$contrast)[c(7:9),-c(4:5,8)]
-supTable2
+supTable1 <- as.data.frame(comp_gen_Nprob$contrast)[,-c(4:5,8)]
+supTable1
 
 ###### supplementary Table 4 ----
 supTable4 <- as.data.frame(comp_tre_Nprob$contrast)[,-c(4:5,8)]
@@ -111,8 +111,8 @@ comp_gen_prob <- summary(emmeans(coxm_prob, pairwise~genotype | ttmt, type="resp
 comp_tre_prob <- summary(emmeans(coxm_prob, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
 ###### supplementary Table 2 ----
-supTable3 <- as.data.frame(comp_gen_prob$contrast)[c(7:9),-c(4:5,8)]
-supTable3
+supTable2 <- as.data.frame(comp_gen_prob$contrast)[,-c(4:5,8)]
+supTable2
 ###### supplementary Table 5 ----
 supTable5 <- as.data.frame(comp_tre_prob$contrast)[,-c(4:5,8)]
 supTable5
@@ -121,22 +121,34 @@ supTable5
 coxm_feed<-coxme(Surv(T_feed,perf)~genotype*ttmt + (1|Date), biting) 
 
 # multiple comparisons
-summary(emmeans(coxm_feed, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(coxm_feed, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_T_feed <- summary(emmeans(coxm_feed, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_T_feed <- summary(emmeans(coxm_feed, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### supplementary Table 7 ----
+supTable7 <- as.data.frame(comp_gen_T_feed$contrast)[,-c(4:5,8)]
+supTable7
 
 ###### Cox proportional hazard mixed-effect model of the prediuresis duration----
 coxm_predi<-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting) 
 
 # multiple comparisons
-summary(emmeans(coxm_predi, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(coxm_predi, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_T_Predi <- summary(emmeans(coxm_predi, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_T_Predi <- summary(emmeans(coxm_predi, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+###### supplementary Table 8 ----
+supTable8 <- as.data.frame(comp_gen_T_Predi$contrast)[,-c(4:5,8)]
+supTable8
 
 ###### Linear mixed-effect model of the weighted volume of bloodmeal----
 lmm_V <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting)
 
 # multiple comparisons
-summary(emmeans(lmm_V, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
-summary(emmeans(lmm_V, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_V_Weight <- summary(emmeans(lmm_V, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
+comp_tre_V_Weight <- summary(emmeans(lmm_V, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+
+###### supplementary Table 6 ----
+supTable6 <- as.data.frame(comp_gen_V_Weight$contrast)[,-c(4:5,8)]
+supTable6
+
 
 ###### Feeding duration vs blood-meal size/pre-diuresis duration correlation analysis ----
 
@@ -152,11 +164,11 @@ lmm_P_feed <- coxme(Surv(T_Predi,perf)~T_feed*genotype*ttmt + (1|Date), data=bit
 # is the slope diffrent than zero ?
 slopeP <- summary(emtrends(lmm_P_feed, ~genotype*ttmt, var = "T_feed", transform ="response"), infer = TRUE) 
 
-###### supplementary Table 6 and 7 ----
-supTable6 <- as.data.frame(slopeV)[,-c(4:5,8)]
-supTable7 <- as.data.frame(slopeP)[,-c(4:5,8)]
-supTable6
-supTable7
+###### supplementary Table 9 and 10 ----
+supTable9 <- as.data.frame(slopeV)[,-c(4:5,8)]
+supTable10 <- as.data.frame(slopeP)[,-c(4:5,8)]
+supTable9
+supTable10
 
 
 
@@ -174,50 +186,64 @@ glmm_Nprob_nb_kd0 <- glmmTMB(N_Prob~genotype*ttmt + (1|Date), data=biting_kd0, f
 
 # multiple comparisons
 comp_tre_Nprob_kd0 <- summary(emmeans(glmm_Nprob_nb_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_Nprob_kd0 <- summary(emmeans(glmm_Nprob_nb_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotype comparison
 
 ###### Cox proportional hazard mixed-effect model of the probing duration (non-KD mosquitoes) -----
 coxm_prob_kd0 <-coxme(Surv(T_Prob,perf)~genotype*ttmt + (1|Date), biting_kd0) 
 
 # multiple comparisons
 comp_tre_prob_kd0 <- summary(emmeans(coxm_prob_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_prob_kd0 <- summary(emmeans(coxm_prob_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotype comparison
 
 ###### Cox proportional hazard mixed-effect model of the feeding duration (non-KD mosquitoes) -----
 coxm_feed_kd0 <-coxme(Surv(T_feed,perf)~genotype*ttmt + (1|Date), biting_kd0) 
 
 # multiple comparisons
 comp_tre_feed_kd0 <- summary(emmeans(coxm_feed_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_feed_kd0 <- summary(emmeans(coxm_feed_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 
 ###### Cox proportional hazard mixed-effect model of the prediuresis duration (non-KD mosquitoes) ----
 coxm_predi_kd0 <-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting_kd0) 
 
 # multiple comparisons
 comp_tre_predi_kd0 <- summary(emmeans(coxm_predi_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_predi_kd0 <- summary(emmeans(coxm_predi_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 
 ###### Linear mixed-effect model of the weighted volume of bloodmeal (non-KD mosquitoes) ----
 lmm_V_kd0 <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting_kd0)
 
 # multiple comparisons
-comp_gen_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among treatments comparison
+comp_gen_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotype comparison
 comp_tre_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
 
 
 ###### Supplementary Tables 8 to 14 ----
-supTable8 <- as.data.frame(comp_tre_perf_kd0$contrast)[,-c(4:5,8)]
-supTable9 <- as.data.frame(comp_gen_perf_kd0$contrast)[,-c(4:5,8)]
-supTable10 <- as.data.frame(comp_tre_Nprob_kd0$contrast)[,-c(4:5,8)]
-supTable11 <- as.data.frame(comp_tre_prob_kd0$contrast)[,-c(4:5,8)]
-supTable12 <- as.data.frame(comp_tre_feed_kd0$contrast)[,-c(4:5,8)]
-supTable13 <- as.data.frame(comp_tre_predi_kd0$contrast)[,-c(4:5,8)]
-supTable14 <- as.data.frame(comp_tre_V_kd0$contrast)[,-c(4:5,8)]
-supTable8
-supTable9
-supTable10
+supTable11 <- as.data.frame(comp_tre_perf_kd0$contrast)[,-c(4:5,8)]
+supTable12 <- as.data.frame(comp_gen_perf_kd0$contrast)[,-c(4:5,8)]
+supTable13 <- as.data.frame(comp_tre_Nprob_kd0$contrast)[,-c(4:5,8)]
+supTable14 <- as.data.frame(comp_gen_Nprob_kd0$contrast)[,-c(4:5,8)]
+supTable15 <- as.data.frame(comp_tre_prob_kd0$contrast)[,-c(4:5,8)]
+supTable16 <- as.data.frame(comp_gen_prob_kd0$contrast)[,-c(4:5,8)]
+supTable17 <- as.data.frame(comp_tre_feed_kd0$contrast)[,-c(4:5,8)]
+supTable18 <- as.data.frame(comp_gen_feed_kd0$contrast)[,-c(4:5,8)]
+supTable19 <- as.data.frame(comp_tre_predi_kd0$contrast)[,-c(4:5,8)]
+supTable20 <- as.data.frame(comp_gen_predi_kd0$contrast)[,-c(4:5,8)]
+supTable21 <- as.data.frame(comp_tre_V_kd0$contrast)[,-c(4:5,8)]
+supTable22 <- as.data.frame(comp_gen_V_kd0$contrast)[,-c(4:5,8)]
+
 supTable11
 supTable12
 supTable13
 supTable14
-
+supTable15
+supTable16
+supTable17
+supTable18
+supTable19
+supTable20
+supTable21
+supTable22
 
 ###### data for Figures-----
 Perf_Biting <- biting
