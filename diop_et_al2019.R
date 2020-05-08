@@ -197,6 +197,7 @@ comp_tre_predi_kd0 <- summary(emmeans(coxm_predi_kd0, pairwise~ttmt | genotype, 
 lmm_V_kd0 <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting_kd0)
 
 # multiple comparisons
+comp_gen_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among treatments comparison
 comp_tre_V_kd0 <- summary(emmeans(lmm_V_kd0, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
 
