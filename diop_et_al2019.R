@@ -124,9 +124,9 @@ coxm_feed<-coxme(Surv(T_feed,perf)~genotype*ttmt + (1|Date), biting)
 comp_gen_T_feed <- summary(emmeans(coxm_feed, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 comp_tre_T_feed <- summary(emmeans(coxm_feed, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
-###### supplementary Table 7 ----
-supTable7 <- as.data.frame(comp_gen_T_feed$contrast)[,-c(4:5,8)]
-supTable7
+###### supplementary Table 8 ----
+supTable8 <- as.data.frame(comp_gen_T_feed$contrast)[,-c(4:5,8)]
+supTable8
 
 ###### Cox proportional hazard mixed-effect model of the prediuresis duration----
 coxm_predi<-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting) 
@@ -134,9 +134,9 @@ coxm_predi<-coxme(Surv(T_Predi,perf)~genotype*ttmt + (1|Date), biting)
 # multiple comparisons
 comp_gen_T_Predi <- summary(emmeans(coxm_predi, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 comp_tre_T_Predi <- summary(emmeans(coxm_predi, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
-###### supplementary Table 8 ----
-supTable8 <- as.data.frame(comp_gen_T_Predi$contrast)[,-c(4:5,8)]
-supTable8
+###### supplementary Table 6 ----
+supTable6 <- as.data.frame(comp_gen_T_Predi$contrast)[,-c(4:5,8)]
+supTable6
 
 ###### Linear mixed-effect model of the weighted volume of bloodmeal----
 lmm_V <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting)
@@ -145,9 +145,9 @@ lmm_V <- lmer(V_Weight~genotype*ttmt + (1|Date), data=biting)
 comp_gen_V_Weight <- summary(emmeans(lmm_V, pairwise~genotype | ttmt, type="response"), infer = TRUE) # among genotypes comparison
 comp_tre_V_Weight <- summary(emmeans(lmm_V, pairwise~ttmt | genotype, type="response"), infer = TRUE) # among treatments comparison
 
-###### supplementary Table 6 ----
-supTable6 <- as.data.frame(comp_gen_V_Weight$contrast)[,-c(4:5,8)]
-supTable6
+###### supplementary Table 7 ----
+supTable7 <- as.data.frame(comp_gen_V_Weight$contrast)[,-c(4:5,8)]
+supTable7
 
 
 ###### Feeding duration vs blood-meal size/pre-diuresis duration correlation analysis ----
