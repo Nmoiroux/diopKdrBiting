@@ -7,3 +7,5 @@ by Diop, Malal M, Fabrice Chandre, Marie Rossignol, Angélique Porciani, Mathieu
 published in Peer Community Journal 1 (2021). 
 
 https://doi.org/10.24072/pcjournal.15.
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3819289.svg)](https://doi.org/10.5281/zenodo.3819289)
